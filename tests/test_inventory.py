@@ -15,7 +15,7 @@ def reset_inventory():
     inventory.clear()
     inventory.extend(original_inventory)
 
-
+#get tests
 def test_get_inventory():
     client = app.test_client()
 
@@ -40,6 +40,7 @@ def test_get_inventory_item_not_found():
     assert response.status_code == 404
     assert response.json["error"] == "Inventory item not found"
 
+#post tests
 def test_create_inventory_item():
     client = app.test_client()
 
@@ -99,7 +100,8 @@ def test_create_inventory_item_invalid_quantity():
     response = client.post("/inventory", json=new_item)
 
     assert response.status_code == 400
-    
+
+#patch tests    
 def test_update_inventory_item():
     client = app.test_client()
 
@@ -161,7 +163,8 @@ def test_update_inventory_item_invalid_field():
 
     assert response.status_code == 400
     assert "Invalid field" in response.json["error"]
-    
+
+#delete tests    
 def test_delete_inventory_item():
     client = app.test_client()
 
@@ -189,6 +192,7 @@ def test_delete_inventory_item_not_found():
     assert response.status_code == 404
     assert response.json["error"] == "Inventory item not found"
 
+#search tests
 def test_search_inventory():
     client = app.test_client()
 

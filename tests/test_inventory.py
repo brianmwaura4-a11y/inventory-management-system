@@ -1,4 +1,19 @@
+import copy
+
+import pytest
+
 from app import app
+from data.inventory import inventory
+
+
+@pytest.fixture(autouse=True)
+def reset_inventory():
+    original_inventory = copy.deepcopy(inventory)
+
+    yield
+
+    inventory.clear()
+    inventory.extend(original_inventory)
 
 
 def test_get_inventory():
@@ -146,3 +161,30 @@ def test_update_inventory_item_invalid_field():
 
     assert response.status_code == 400
     assert "Invalid field" in response.json["error"]
+    
+def test_delete_inventory_item():
+    client = app.test_client()
+
+    response = client.delete("/inventory/2")
+
+    assert response.status_code == 200
+    assert response.json["message"] == (
+        "Inventory item deleted successfully"
+    )
+    
+def test_deleted_inventory_item_is_not_found():
+    client = app.test_client()
+
+    client.delete("/inventory/2")
+
+    response = client.get("/inventory/2")
+
+    assert response.status_code == 404
+    
+def test_delete_inventory_item_not_found():
+    client = app.test_client()
+
+    response = client.delete("/inventory/22")
+
+    assert response.status_code == 404
+    assert response.json["error"] == "Inventory item not found"

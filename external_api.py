@@ -31,7 +31,7 @@ def search_products(name):
     url = f"{BASE_URL}/search"
 
     params = {
-        "categories_tags_en": name,
+        "search_terms": name,
         "fields": "code,product_name,brands,categories",
         "page_size": 10
     }

@@ -18,6 +18,23 @@ def get_inventory_item(item_id):
 
     return jsonify({"error": "Inventory item not found"}), 404
 
+#search helper route
+@app.route("/inventory/search", methods=["GET"])
+def search_inventory():
+    name = request.args.get("name", "").strip().lower()
+
+    if not name:
+        return jsonify({
+            "error": "Search name is required"
+        }), 400
+
+    results = [
+        item for item in inventory
+        if name in item["name"].lower()
+    ]
+
+    return jsonify(results), 200
+
 #post route
 @app.route("/inventory", methods=["POST"])
 def create_inventory_item():

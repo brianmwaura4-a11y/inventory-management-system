@@ -188,3 +188,20 @@ def test_delete_inventory_item_not_found():
 
     assert response.status_code == 404
     assert response.json["error"] == "Inventory item not found"
+
+def test_search_inventory():
+    client = app.test_client()
+
+    response = client.get("/inventory/search?name=coca")
+
+    assert response.status_code == 200
+    assert len(response.json) == 1
+    assert response.json[0]["name"] == "Coca Cola"
+    
+def test_search_inventory_without_name():
+    client = app.test_client()
+
+    response = client.get("/inventory/search")
+
+    assert response.status_code == 400
+    assert response.json["error"] == "Search name is required"

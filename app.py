@@ -1,5 +1,7 @@
 from flask import Flask, jsonify, request
 
+from external_api import get_product_by_barcode
+
 from data.inventory import inventory
 
 app = Flask(__name__)
@@ -161,6 +163,23 @@ def delete_inventory_item(item_id):
     return jsonify({
         "error": "Inventory item not found"
     }), 404
+
+@app.route("/products/barcode/<barcode>", methods=["GET"])
+def get_external_product(barcode):
+    try:
+        product = get_product_by_barcode(barcode)
+
+        if product is None:
+            return jsonify({
+                "error": "Product not found on OpenFoodFacts"
+            }), 404
+
+        return jsonify(product), 200
+
+    except Exception as error:
+        return jsonify({
+            "error": f"External API request failed: {str(error)}"
+        }), 502
 
 if __name__ == "__main__":
     app.run(debug=True)

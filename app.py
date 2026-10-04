@@ -1,5 +1,7 @@
 from flask import Flask, jsonify, request
 
+from external_api import get_product_by_barcode, search_products
+
 from data.inventory import inventory
 
 app = Flask(__name__)
@@ -161,6 +163,107 @@ def delete_inventory_item(item_id):
     return jsonify({
         "error": "Inventory item not found"
     }), 404
+
+@app.route("/products/barcode/<barcode>", methods=["GET"])
+def get_external_product(barcode):
+    try:
+        product = get_product_by_barcode(barcode)
+
+        if product is None:
+            return jsonify({
+                "error": "Product not found on OpenFoodFacts"
+            }), 404
+
+        return jsonify(product), 200
+
+    except Exception as error:
+        return jsonify({
+            "error": f"External API request failed: {str(error)}"
+        }), 502
+
+@app.route("/products/import", methods=["POST"])
+def import_product():
+    data = request.get_json()
+
+    if not data or "barcode" not in data:
+        return jsonify({
+            "error": "Barcode is required"
+        }), 400
+
+    barcode = data["barcode"]
+
+    for item in inventory:
+        if item["barcode"] == barcode:
+            return jsonify({
+                "error": "An item with this barcode already exists"
+            }), 409
+
+    try:
+        product = get_product_by_barcode(barcode)
+
+        if product is None:
+            return jsonify({
+                "error": "Product not found on OpenFoodFacts"
+            }), 404
+
+    except Exception as error:
+        return jsonify({
+            "error": f"External API request failed: {str(error)}"
+        }), 502
+
+    product_name = product.get("product_name")
+
+    if not product_name:
+        product_name = "Unknown Product"
+
+    brands = product.get("brands", "")
+    categories = product.get("categories", "")
+
+    category = categories.split(",")[0].strip()
+
+    if not category:
+        category = "Uncategorized"
+
+    new_id = max(
+        (item["id"] for item in inventory),
+        default=0
+    ) + 1
+
+    new_item = {
+        "id": new_id,
+        "name": product_name,
+        "category": category,
+        "barcode": barcode,
+        "quantity": 0,
+        "price": 0,
+        "brand": brands
+    }
+
+    inventory.append(new_item)
+
+    return jsonify({
+        "message": "Product imported successfully",
+        "item": new_item
+    }), 201
+    
+@app.route("/products/search", methods=["GET"])
+def search_external_products():
+    name = request.args.get("name", "").strip()
+
+    if not name:
+        return jsonify({
+            "error": "Product name is required"
+        }), 400
+
+    try:
+        products = search_products(name)
+
+        return jsonify(products), 200
+
+    except Exception as error:
+        return jsonify({
+            "error": f"External API request failed: {str(error)}"
+        }), 502
 
 if __name__ == "__main__":
     app.run(debug=True)
